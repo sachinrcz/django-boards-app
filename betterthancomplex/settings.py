@@ -12,20 +12,23 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 
 import os
 
+
+def get_list(text):
+    return [item.strip() for item in text.split(',')]
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
+PROJECT_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'z+)&4dlt6*ujdm-5=8zhwz9_tc18jba6*v)2meka4+3)9z)_ez'
+SECRET_KEY = os.environ.get('SECRET_KEY','8ls68&fwc#yw3iqbepm&t-dfq9c85)8tiu&dx#gn#njrz$di+0')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = get_list(os.environ.get('ALLOWED_HOSTS', '127.0.0.1'))
 
 
 # Application definition
@@ -57,7 +60,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            os.path.join(BASE_DIR, 'templates')
+            os.path.join(PROJECT_ROOT, 'templates')
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -120,7 +123,7 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
-
+STATIC_ROOT = os.path.join(PROJECT_ROOT, 'static')
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
