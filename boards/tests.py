@@ -5,6 +5,7 @@ from .views import home, board_topics, new_topic
 from .models import Board, Topic, Post
 from django.contrib.auth.models import User
 from .forms import NewTopicForm
+from accounts.views import signup
 # Create your tests here.
 
 
@@ -134,3 +135,15 @@ class NewTopicTests(TestCase):
         form = response.context.get('form')
         self.assertEquals(response.status_code,200)
         self.assertTrue(form.errors)
+
+
+class signupTests(TestCase):
+
+    def test_signup_status_code(self):
+        url = reverse('signup')
+        response = self.client.get(url)
+        self.assertEquals(response.status_code, 200)
+
+    def test_signup_resolves_signup_views(self):
+        view = resolve('/signup/')
+        self.assertEquals(view.func,signup)
