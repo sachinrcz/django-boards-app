@@ -1,66 +1,18 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.core.urlresolvers import resolve
-from .views import home, board_topics, new_topic
-from .models import Board, Topic, Post
+from boards.views import new_topic
+from boards.models import Board, Topic, Post
 from django.contrib.auth.models import User
-from .forms import NewTopicForm
-from accounts.views import signup
-# Create your tests here.
-
-
-class HomeTest(TestCase):
-
-    def setUp(self):
-        self.board = Board.objects.create(name='Django',description='Django Desc')
-        url = reverse('home')
-        self.response = self.client.get(url)
-
-    def test_home_view_status_code(self):
-        self.assertEquals(self.response.status_code ,200)
-
-    def test_home_url_resolve_to_home_view(self):
-        views = resolve('/')
-        self.assertEquals(views.func ,home)
-
-    def test_board_links_in_home(self):
-        board_topic_url = reverse('board_topics',kwargs={'pk':self.board.pk})
-        self.assertContains(self.response,'href="{0}"'.format(board_topic_url))
-
-
-
-
-class BoardTopicTests(TestCase):
-
-    def setUp(self):
-        self.board = Board.objects.create(name="Test Board",description="Test Board Description")
-
-    def test_board_view_status_code_success(self):
-        url = reverse('board_topics', kwargs={'pk':self.board.pk})
-        response = self.client.get(url)
-        self.assertEquals(response.status_code, 200)
-
-    def test_board_view_status_code_error(self):
-        url = reverse('board_topics', kwargs={'pk': 99})
-        response = self.client.get(url)
-        self.assertEquals(response.status_code, 404)
-
-    def test_board_topic_url_resolves_board_topic_view(self):
-        views = resolve('/boards/1/')
-        self.assertEquals(views.func, board_topics)
-
-    def test_board_topic_contains_home_link(self):
-        board_topics_url = reverse('board_topics',kwargs={'pk':self.board.pk })
-        response = self.client.get(board_topics_url)
-        home_url = reverse('home')
-        self.assertContains(response, 'href="{0}"'.format(home_url))
+from boards.forms import NewTopicForm
 
 
 class NewTopicTests(TestCase):
 
     def setUp(self):
-        self.board = Board.objects.create(name="Django",description="Test Description")
-        User.objects.create_user(username='john')
+        Board.objects.create(name="Django",description="Test Description")
+        User.objects.create_user(username='john',email='john@doe.com',password='123')
+        self.client.login(username='john',password='123')
 
     def test_csrf(self):
         url = reverse('new_topic',kwargs={'pk':1})
@@ -102,7 +54,7 @@ class NewTopicTests(TestCase):
         self.assertFalse(Post.objects.exists())
 
     def test_new_topic_success_code(self):
-        url = reverse('new_topic', kwargs={'pk':self.board.pk})
+        url = reverse('new_topic', kwargs={'pk':'1'})
         response = self.client.get(url)
         self.assertEquals(response.status_code,200)
 
@@ -116,34 +68,33 @@ class NewTopicTests(TestCase):
         self.assertEquals(view.func,new_topic)
 
     def test_new_topic_contains_link_back_to_board_topics_view(self):
-        new_topic_url = reverse('new_topic', kwargs={'pk':self.board.pk})
-        board_topics_url = reverse('board_topics',kwargs={'pk':self.board.pk})
+        new_topic_url = reverse('new_topic', kwargs={'pk':'1'})
+        board_topics_url = reverse('board_topics',kwargs={'pk':'1'})
         response = self.client.get(new_topic_url)
         self.assertContains(response, 'href="{0}"'.format(board_topics_url))
 
 
     def test_contains_form(self):
-        url = reverse('new_topic',kwargs={'pk':self.board.pk})
+        url = reverse('new_topic',kwargs={'pk':'1'})
         response = self.client.get(url)
         form = response.context.get('form')
         self.assertIsInstance(form,NewTopicForm)
 
 
     def test_new_topic_invalid_data(self):
-        url = reverse('new_topic',kwargs={'pk':self.board.pk})
+        url = reverse('new_topic',kwargs={'pk':'1'})
         response = self.client.post(url,{})
         form = response.context.get('form')
         self.assertEquals(response.status_code,200)
         self.assertTrue(form.errors)
 
 
-class signupTests(TestCase):
+class LoginRequiredNewTopicTests(TestCase):
+    def setUp(self):
+        Board.objects.create(name='Django', description='Django board.')
+        self.url = reverse('new_topic', kwargs={'pk': 1})
+        self.response = self.client.get(self.url)
 
-    def test_signup_status_code(self):
-        url = reverse('signup')
-        response = self.client.get(url)
-        self.assertEquals(response.status_code, 200)
-
-    def test_signup_resolves_signup_views(self):
-        view = resolve('/signup/')
-        self.assertEquals(view.func,signup)
+    def test_redirection(self):
+        login_url = reverse('login')
+        self.assertRedirects(self.response, '{login_url}?next={url}'.format(login_url=login_url, url=self.url))
