@@ -11,7 +11,8 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
-
+from decouple import config, Csv
+import dj_database_url
 
 def get_list(text):
     return [item.strip() for item in text.split(',')]
@@ -22,13 +23,17 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY','8ls68&fwc#yw3iqbepm&t-dfq9c85)8tiu&dx#gn#njrz$di+0')
+# SECRET_KEY = os.environ.get('SECRET_KEY','8ls68&fwc#yw3iqbepm&t-dfq9c85)8tiu&dx#gn#njrz$di+0')
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = get_list(os.environ.get('ALLOWED_HOSTS', '*'))
-
+DEBUG = config('DEBUG', default=False, cast=bool)
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
+DATABASES = {
+    'default': dj_database_url.config(
+        default=config('DATABASE_URL')
+    )
+}
 
 # Application definition
 
